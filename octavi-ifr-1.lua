@@ -1,6 +1,5 @@
 IFR1_MODE = 0
 IFR1_LAST_MODE = 0
-IFR1_STATUS_TEXT = ""
 
 IFR1_LED_AP = false
 IFR1_LED_HDG = false
@@ -21,6 +20,8 @@ IFR1_LAST_BTN_DCT = false
 IFR1_LAST_BTN_MNU = false
 IFR1_LAST_BTN_CLR = false
 IFR1_LAST_BTN_ENT = false
+
+IFR1_BOTH_BTN_ALT_VS = false
 
 IFR1_BTN_KNOB = false
 IFR1_BTN_SWAP = false
@@ -56,31 +57,38 @@ IFR1_DEVICE_PID = 0xe6d6
 IFR1_LAST_NUMBER_OF_HID_DEVICES = 0
 IFR1_FOUND = false
 
+DataRef("heading", "sim/cockpit/autopilot/heading_mag", "writable")
+DataRef("nav1_obs", "sim/cockpit/radios/nav1_obs_degm", "writable")
+DataRef("nav2_obs", "sim/cockpit/radios/nav2_obs_degm2", "writable")
+DataRef("xpdr_mode", "sim/cockpit2/radios/actuators/transponder_mode", "writable")
+DataRef("xpdr_ident", "sim/cockpit2/radios/indicators/transponder_id")
 DataRef("ap_on", "sim/cockpit2/autopilot/servos_on")
 DataRef("ap_lateral", "sim/cockpit2/autopilot/heading_mode")
 DataRef("ap_vertical", "sim/cockpit2/autopilot/altitude_mode")
 DataRef("ap_appr", "sim/cockpit2/autopilot/approach_status")
 DataRef("ap_vs", "sim/cockpit2/autopilot/vvi_dial_fpm", "writable")
 DataRef("ap_alt", "sim/cockpit2/autopilot/altitude_dial_ft", "writable")
-DataRef("xpdr_code", "sim/cockpit2/radios/actuators/transponder_code", "writable")
-DataRef("nav1_obs", "sim/cockpit/radios/nav1_obs_degm", "writable")
-DataRef("nav2_obs", "sim/cockpit/radios/nav2_obs_degm2", "writable")
-DataRef("heading_indicated", "sim/cockpit/misc/compass_indicated")
-DataRef("dg_heading", "sim/cockpit2/gauges/indicators/heading_vacuum_deg_mag_pilot", "writable")
-DataRef("xpdr_mode", "sim/cockpit2/radios/actuators/transponder_mode", "writable")
-DataRef("com1_sby", "sim/cockpit2/radios/actuators/com1_standby_frequency_hz", "writable")
-DataRef("com2_sby", "sim/cockpit2/radios/actuators/com2_standby_frequency_hz", "writable")
-DataRef("nav1_sby", "sim/cockpit2/radios/actuators/nav1_standby_frequency_hz", "writable")
-DataRef("nav2_sby", "sim/cockpit2/radios/actuators/nav2_standby_frequency_hz", "writable")
-DataRef("com1_frq", "sim/cockpit2/radios/actuators/com1_frequency_hz", "writable")
-DataRef("com2_frq", "sim/cockpit2/radios/actuators/com2_frequency_hz", "writable")
-DataRef("nav1_frq", "sim/cockpit2/radios/actuators/nav1_frequency_hz", "writable")
-DataRef("nav2_frq", "sim/cockpit2/radios/actuators/nav2_frequency_hz", "writable")
-DataRef("xpdr_ident", "sim/cockpit/radios/transponder_id")
 DataRef("ap_state", "sim/cockpit/autopilot/autopilot_state")
-DataRef("heading", "sim/cockpit/autopilot/heading_mag", "writable")
-DataRef( "sim_time", "sim/network/misc/network_time_sec")
+DataRef("sim_time", "sim/network/misc/network_time_sec")
 DataRef("ap_alt_hold", "sim/cockpit2/autopilot/altitude_hold_status")
+
+AW109_RESET_NEEDED = false
+AW109_PUSH_TIMER = 0
+AW109_IAS_HOT = false
+AW109_HDG_HOT = false
+AW109_ALT_HOT = false
+AW109_VS_HOT = false
+AW109_TIME_LAST_ACTION = 0
+
+-- AW109 AP
+DataRef("aw109_ap_ias", "aw109/cockpit/capsule/apms/ias_on")
+DataRef("aw109_ap_hdg", "aw109/cockpit/capsule/apms/hdg_on")
+DataRef("aw109_ap_nav_c", "aw109/cockpit/capsule/apms/nav_c")
+DataRef("aw109_ap_nav_a", "aw109/cockpit/capsule/apms/nav_a")
+DataRef("aw109_ap_apr_c", "aw109/cockpit/capsule/apms/app_c")
+DataRef("aw109_ap_apr_a", "aw109/cockpit/capsule/apms/app_a")
+DataRef("aw109_ap_alt", "aw109/cockpit/capsule/apms/alt_on")
+DataRef("aw109_ap_vs", "aw109/cockpit/capsule/apms/vs_on")
 
 function ifr1_close()
     if IFR1_DEVICE ~= nil then
@@ -144,17 +152,7 @@ function ifr1_open()
     end
 end
 
-function ifr1_pas_to_inhg(pascals)
-    local inchesMercury = pascals * 0.0002953
-    return inchesMercury
-end
-
-function ifr1_round(num, numDecimalPlaces)
-    local mult = 10 ^ numDecimalPlaces
-    return math.floor(num * mult + 0.5) / mult
-end
-
-function ifr1_last_buttons()
+function ifr1_acquire_buttons(b0, b1, b2, mv)
     IFR1_LAST_BTN_KNOB = IFR1_BTN_KNOB
     IFR1_LAST_BTN_SWAP = IFR1_BTN_SWAP
     IFR1_LAST_BTN_AP = IFR1_BTN_AP
@@ -168,10 +166,7 @@ function ifr1_last_buttons()
     IFR1_LAST_BTN_CLR = IFR1_BTN_CLR
     IFR1_LAST_BTN_ENT = IFR1_BTN_ENT
     IFR1_LAST_MODE = IFR1_MODE
-end
 
-function ifr1_process_buttons_knobs(b0, b1, b2, k0, k1, mv)
-    ifr1_last_buttons()
     IFR1_MODE = mv
     IFR1_BTN_KNOB = bit.band(b1, 0x02) > 0
     IFR1_BTN_SWAP = bit.band(b1, 0x01) > 0
@@ -185,28 +180,70 @@ function ifr1_process_buttons_knobs(b0, b1, b2, k0, k1, mv)
     IFR1_BTN_MNU =  bit.band(b0, 0x20) > 0
     IFR1_BTN_CLR =  bit.band(b0, 0x40) > 0
     IFR1_BTN_ENT =  bit.band(b0, 0x80) > 0
+end
 
-    if IFR1_BTN_KNOB and not IFR1_LAST_BTN_KNOB then
+function ifr1_handle_com_freq(k0, k1, com_nb)
+    for i = 1, math.abs(k0) do
+        if k0 < 0 then
+            command_once(string.format("sim/radios/stby_com%d_coarse_down_833", com_nb))
+        else
+            command_once(string.format("sim/radios/stby_com%d_coarse_up_833", com_nb))
+        end
+    end
+    for i = 1, math.abs(k1) do
+        if k1 < 0 then
+            command_once(string.format("sim/radios/stby_com%d_fine_down_833", com_nb))
+        else
+            command_once(string.format("sim/radios/stby_com%d_fine_up_833", com_nb))
+        end
+    end
+    if IFR1_BTN_SWAP and not IFR1_LAST_BTN_SWAP then
+        command_once(string.format("sim/radios/com%d_standy_flip", com_nb))
+    end
+end
+
+function ifr1_handle_nav_freq(k0, k1, com_nb)
+    for i = 1, math.abs(k0) do
+        if k0 < 0 then
+            command_once(string.format("sim/radios/stby_nav%d_coarse_down", com_nb))
+        else
+            command_once(string.format("sim/radios/stby_nav%d_coarse_up", com_nb))
+        end
+    end
+    for i = 1, math.abs(k1) do
+        if k1 < 0 then
+            command_once(string.format("sim/radios/stby_nav%d_fine_down", com_nb))
+        else
+            command_once(string.format("sim/radios/stby_nav%d_fine_up", com_nb))
+        end
+    end
+    if IFR1_BTN_SWAP and not IFR1_LAST_BTN_SWAP then
+        command_once(string.format("sim/radios/nav%d_standy_flip", com_nb))
+    end
+end
+
+function ifr1_process_buttons_knobs_standard(k0, k1)
+    if (IFR1_MODE <= IFR1_MODE_VALUE_NAV2 or IFR1_MODE == IFR1_MODE_VALUE_XPDR) and IFR1_BTN_KNOB and not IFR1_LAST_BTN_KNOB then
         IFR1_MODE_SHIFT = not IFR1_MODE_SHIFT
     end
 
-    if IFR1_MODE >= IFR1_MODE_VALUE_XPDR or IFR1_MODE == IFR1_MODE_VALUE_FMS1 or IFR1_MODE == IFR1_MODE_VALUE_FMS2 or IFR1_MODE ~= IFR1_LAST_MODE then
+    if IFR1_MODE ~= IFR1_LAST_MODE then
         IFR1_MODE_SHIFT = false
     end
+
+    local sum_knob = k0 + k1
 
     if IFR1_MODE_SHIFT then
         if IFR1_MODE == IFR1_MODE_VALUE_COM1 then
             if IFR1_BTN_HDG and not IFR1_LAST_BTN_HDG then
                 command_once("sim/instruments/DG_sync_mag")
-            else
-                heading = ifr1_round((heading + k0 * 10 + k1),0) % 360
             end
-
+            heading = (heading + k0 * 10 + k1) % 360
         end
 
         if IFR1_MODE == IFR1_MODE_VALUE_COM2 then
-            for i = 1, math.abs(k1) do
-                if k1 < 0 then
+            for i = 1, math.abs(sum_knob) do
+                if sum_knob < 0 then
                     command_once("sim/instruments/barometer_down")
                 else
                     command_once("sim/instruments/barometer_up")
@@ -218,67 +255,31 @@ function ifr1_process_buttons_knobs(b0, b1, b2, k0, k1, mv)
         end
 
         if IFR1_MODE == IFR1_MODE_VALUE_NAV1 then
-            nav1_obs = ifr1_round((nav1_obs - k0 * 10 - k1),0) % 360
+            nav1_obs = (nav1_obs + k0 * 10 + k1) % 360
         end
 
         if IFR1_MODE == IFR1_MODE_VALUE_NAV2 then
-            nav2_obs = ifr1_round((nav2_obs - k0 * 10 - k1),0) % 360
+            nav2_obs = (nav2_obs + k0 * 10 + k1) % 360
         end
 
-        if IFR1_MODE == IFR1_MODE_VALUE_AP then
-            if IFR1_BTN_APR and not IFR1_LAST_BTN_APR then
-                command_once("sim/autopilot/back_course")
-            end
+        if IFR1_MODE == IFR1_MODE_VALUE_XPDR then
+            xpdr_mode = math.max(0, math.min(7, xpdr_mode + sum_knob))
         end
     else -- normal (not shift) mode
-        if IFR1_MODE <= IFR1_MODE_VALUE_NAV2 then
-            local freq_div = 2.5
-            local freq = IFR1_MODE == IFR1_MODE_VALUE_COM1 and com1_sby or IFR1_MODE == IFR1_MODE_VALUE_COM2 and com2_sby or IFR1_MODE == IFR1_MODE_VALUE_NAV1 and nav1_sby or IFR1_MODE == IFR1_MODE_VALUE_NAV2 and nav2_sby or 0
-            local khz = math.floor((freq % 100 + k1 * freq_div + freq_div/2)/freq_div)*freq_div  % 100
-            local mhz = math.floor(freq/100) + k0
-            if (IFR1_MODE == IFR1_MODE_VALUE_COM1 or IFR1_MODE == IFR1_MODE_VALUE_COM2) and mhz < 118 then
-                mhz = 135
-            end
-            if (IFR1_MODE == IFR1_MODE_VALUE_COM1 or IFR1_MODE == IFR1_MODE_VALUE_COM2) and mhz > 135 then
-                mhz = 118
-            end
+        if IFR1_MODE == IFR1_MODE_VALUE_COM1 then
+            ifr1_handle_com_freq(k0, k1, 1)
+        end
 
-            if (IFR1_MODE == IFR1_MODE_VALUE_NAV1 or IFR1_MODE == IFR1_MODE_VALUE_NAV2) and mhz <108 then
-                mhz = 117
-            end
-            if (IFR1_MODE == IFR1_MODE_VALUE_NAV1 or IFR1_MODE == IFR1_MODE_VALUE_NAV2) and mhz > 117 then
-                mhz = 108
-            end
+        if IFR1_MODE == IFR1_MODE_VALUE_COM2 then
+            ifr1_handle_com_freq(k0, k1, 2)
+        end
 
-            freq = mhz * 100 + khz
-            if IFR1_MODE == IFR1_MODE_VALUE_COM1 then
-                com1_sby = freq
-                if IFR1_BTN_SWAP and not IFR1_LAST_BTN_SWAP then
-                    com1_sby = com1_frq
-                    com1_frq = freq
-                end
-            end
-            if IFR1_MODE == IFR1_MODE_VALUE_COM2 then
-                com2_sby = freq
-                if IFR1_BTN_SWAP and not IFR1_LAST_BTN_SWAP then
-                    com2_sby = com2_frq
-                    com2_frq = freq
-                end
-            end
-            if IFR1_MODE == IFR1_MODE_VALUE_NAV1 then
-                nav1_sby = freq
-                if IFR1_BTN_SWAP and not IFR1_LAST_BTN_SWAP then
-                    nav1_sby = nav1_frq
-                    nav1_frq = freq
-                end
-            end
-            if IFR1_MODE == IFR1_MODE_VALUE_NAV2 then
-                nav2_sby = freq
-                if IFR1_BTN_SWAP and not IFR1_LAST_BTN_SWAP then
-                    nav2_sby = nav2_frq
-                    nav2_frq = freq
-                end
-            end
+        if IFR1_MODE == IFR1_MODE_VALUE_NAV1 then
+            ifr1_handle_nav_freq(k0, k1, 1)
+        end
+
+        if IFR1_MODE == IFR1_MODE_VALUE_NAV2 then
+            ifr1_handle_nav_freq(k0, k1, 2)
         end
 
         if IFR1_MODE == IFR1_MODE_VALUE_FMS1 or IFR1_MODE == IFR1_MODE_VALUE_FMS2 then
@@ -351,8 +352,8 @@ function ifr1_process_buttons_knobs(b0, b1, b2, k0, k1, mv)
         if IFR1_MODE == IFR1_MODE_VALUE_AP then
             local last_ap_vs = ap_vs
             local last_ap_alt = ap_alt
-            ap_vs = math.floor(ap_vs/100 + k0 + 0.5) * 100
-            ap_alt = math.floor(ap_alt/100 + k1 + 0.5) * 100
+            ap_vs = ap_vs + k0 * 100
+            ap_alt = ap_alt + k1 * 100
 
             if IFR1_BTN_AP and not IFR1_LAST_BTN_AP then
                 command_once("sim/autopilot/servos_toggle")
@@ -370,31 +371,43 @@ function ifr1_process_buttons_knobs(b0, b1, b2, k0, k1, mv)
                 command_once("sim/autopilot/approach")
             end
 
-            if IFR1_BTN_ALT and IFR1_BTN_VS and not IFR1_LAST_BTN_ALT then
+            if IFR1_BTN_ALT and IFR1_BTN_VS and not (IFR1_LAST_BTN_ALT and IFR1_LAST_BTN_VS) then
+                IFR1_BOTH_BTN_ALT_VS = true
                 command_once("sim/autopilot/alt_vs")
-            else
+            end
+            if not IFR1_BTN_ALT and not IFR1_BTN_VS then
+                IFR1_BOTH_BTN_ALT_VS = false
+            end
 
-                if IFR1_BTN_ALT and not IFR1_LAST_BTN_ALT then
-                    command_once("sim/autopilot/altitude_hold")
-                end
+            if IFR1_LAST_BTN_ALT and not IFR1_BTN_ALT and not IFR1_BOTH_BTN_ALT_VS then
+                command_once("sim/autopilot/altitude_hold")
+            end
 
-                if IFR1_BTN_VS and not IFR1_LAST_BTN_VS then
-                    command_once("sim/autopilot/vertical_speed")
-
-                end
+            if IFR1_LAST_BTN_VS and not IFR1_BTN_VS and not IFR1_BOTH_BTN_ALT_VS then
+                command_once("sim/autopilot/vertical_speed")
             end
         end
 
         if IFR1_MODE == IFR1_MODE_VALUE_XPDR then
-            if IFR1_BTN_KNOB and not IFR1_LAST_BTN_KNOB then
-                xpdr_mode = (xpdr_mode + 1) % 4
+            if IFR1_BTN_SWAP and not IFR1_LAST_BTN_SWAP then
+                set("sim/cockpit2/radios/actuators/transponder_code", 7000)
             end
     
-            local hund = math.floor(xpdr_code / 100)
-            local ones = xpdr_code % 100
-            hund = (hund + k0) % 78
-            ones = (ones + k1) % 78
-            xpdr_code = hund * 100 + ones
+            for i = 1, math.abs(k1) do
+                if k1 < 0 then
+                    command_once("sim/transponder/transponder_34_down")
+                else
+                    command_once("sim/transponder/transponder_34_up")
+                end
+            end
+
+            for i = 1, math.abs(k0) do
+                if k0 < 0 then
+                    command_once("sim/transponder/transponder_12_down")
+                else
+                    command_once("sim/transponder/transponder_12_up")
+                end
+            end
     
             if IFR1_BTN_AP and not IFR1_LAST_BTN_AP then
                 command_once("sim/transponder/transponder_ident")
@@ -403,24 +416,262 @@ function ifr1_process_buttons_knobs(b0, b1, b2, k0, k1, mv)
     end
 end
 
+function ifr1_process_buttons_knobs_aw109sp(k0, k1)
+    if IFR1_MODE ~= IFR1_LAST_MODE then
+        IFR1_MODE_SHIFT = false
+        AW109_IAS_HOT = false
+        AW109_HDG_HOT = false
+        AW109_ALT_HOT = false
+        AW109_VS_HOT = false
+    end
+
+    local sum_knob = k0 + k1
+
+    if IFR1_MODE == IFR1_MODE_VALUE_COM1 then
+        ifr1_handle_com_freq(k0, k1, 1)
+    end
+
+    if IFR1_MODE == IFR1_MODE_VALUE_COM2 then
+        if IFR1_BTN_KNOB and not IFR1_LAST_BTN_KNOB then
+            IFR1_MODE_SHIFT = not IFR1_MODE_SHIFT
+        end
+        if IFR1_MODE_SHIFT then
+            for i = 1, math.abs(sum_knob) do
+                if sum_knob < 0 then
+                    command_once("sim/instruments/barometer_down")
+                else
+                    command_once("sim/instruments/barometer_up")
+                end
+            end
+        else
+            ifr1_handle_com_freq(k0, k1, 2)
+        end
+    end
+
+    if IFR1_MODE == IFR1_MODE_VALUE_NAV1 then
+        ifr1_handle_nav_freq(k0, k1, 1)
+    end
+
+    if IFR1_MODE == IFR1_MODE_VALUE_NAV2 then
+        ifr1_handle_nav_freq(k0, k1, 2)
+    end
+
+    if IFR1_MODE == IFR1_MODE_VALUE_FMS1 or IFR1_MODE == IFR1_MODE_VALUE_FMS2 then
+        local efis = IFR1_MODE == IFR1_MODE_VALUE_FMS1 and 2 or 3
+
+        if IFR1_BTN_DCT and not IFR1_LAST_BTN_DCT then
+            command_once(string.format("aw109/button/EFIS_%d_R1", efis))
+        end
+
+        if IFR1_BTN_MNU and not IFR1_LAST_BTN_MNU then
+            command_once(string.format("aw109/button/EFIS_%d_R2", efis))
+        end
+
+        if IFR1_BTN_CLR and not IFR1_LAST_BTN_CLR then
+            command_once(string.format("aw109/button/EFIS_%d_R3", efis))
+        end
+
+        if IFR1_BTN_ENT and not IFR1_LAST_BTN_ENT then
+            command_once(string.format("aw109/button/EFIS_%d_R4", efis))
+        end
+
+        if IFR1_BTN_NAV and not IFR1_LAST_BTN_NAV then
+            command_once(string.format("aw109/button/EFIS_%d_L1", efis))
+        end
+
+        if IFR1_BTN_APR and not IFR1_LAST_BTN_APR then
+            command_once(string.format("aw109/button/EFIS_%d_L2", efis))
+        end
+
+        if IFR1_BTN_ALT and not IFR1_LAST_BTN_ALT then
+            command_once(string.format("aw109/button/EFIS_%d_L3", efis))
+        end
+
+        if IFR1_BTN_VS and not IFR1_LAST_BTN_VS then
+            command_once(string.format("aw109/button/EFIS_%d_L4", efis))
+        end
+
+        if IFR1_BTN_KNOB and not IFR1_LAST_BTN_KNOB then
+            command_once(string.format("aw109/button/EFIS_%d_ENT", efis))
+        end
+
+        if k1 < 0 then
+            command_once(string.format("aw109/button/EFIS_%d_ROT_DEC", efis))
+        elseif k1 > 0 then
+            command_once(string.format("aw109/button/EFIS_%d_ROT_INC", efis))
+        end
+
+        if k0 < 0 then
+            command_once(string.format("aw109/button/EFIS_%d_BRT_ROT_DEC", efis))
+        elseif k0 > 0 then
+            command_once(string.format("aw109/button/EFIS_%d_BRT_ROT_INC", efis))
+        end
+    end
+
+    if IFR1_MODE == IFR1_MODE_VALUE_AP then
+        if IFR1_BTN_AP and not IFR1_LAST_BTN_AP then
+            AW109_PUSH_TIMER = sim_time
+        elseif IFR1_LAST_BTN_AP and not IFR1_BTN_AP then
+            if sim_time - AW109_PUSH_TIMER >= 0.5 then
+                set("aw109/cockpit/button/apms/ias_push", 1)
+                set("aw109/cockpit/button/apms/ias_push", 0)
+            else
+                AW109_IAS_HOT = not AW109_IAS_HOT
+                AW109_HDG_HOT = false
+                AW109_ALT_HOT = false
+                AW109_VS_HOT = false
+            end
+        end
+
+        if IFR1_BTN_HDG and not IFR1_LAST_BTN_HDG then
+            AW109_PUSH_TIMER = sim_time
+        elseif IFR1_LAST_BTN_HDG and not IFR1_BTN_HDG then
+            if sim_time - AW109_PUSH_TIMER >= 0.5 then
+                command_once("sim/autopilot/heading_sync")
+            else
+                AW109_IAS_HOT = false
+                AW109_HDG_HOT = not AW109_HDG_HOT
+                AW109_ALT_HOT = false
+                AW109_VS_HOT = false
+            end
+        end
+
+        if IFR1_BTN_NAV and not IFR1_LAST_BTN_NAV then
+            command_once("sim/autopilot/NAV")
+        end
+
+        if IFR1_BTN_APR and not IFR1_LAST_BTN_APR then
+            AW109_PUSH_TIMER = sim_time
+        elseif IFR1_LAST_BTN_APR and not IFR1_BTN_APR then
+            if sim_time - AW109_PUSH_TIMER >= 0.5 then
+                set("aw109/cockpit/button/apms/gs", 1)
+                set("aw109/cockpit/button/apms/gs", 0)
+            else
+                command_once("sim/autopilot/approach")
+            end
+        end
+
+        if IFR1_BTN_ALT and not IFR1_LAST_BTN_ALT then
+            AW109_PUSH_TIMER = sim_time
+        end
+        if IFR1_BTN_ALT and IFR1_BTN_VS and not (IFR1_LAST_BTN_ALT and IFR1_LAST_BTN_VS) then
+            IFR1_BOTH_BTN_ALT_VS = true
+            command_once("sim/autopilot/level_change")
+        end
+
+        if IFR1_LAST_BTN_ALT and not IFR1_BTN_ALT and not IFR1_BOTH_BTN_ALT_VS then
+            if sim_time - AW109_PUSH_TIMER >= 0.5 then
+                command_once("sim/autopilot/altitude_hold")
+            else
+                AW109_IAS_HOT = false
+                AW109_HDG_HOT = false
+                AW109_ALT_HOT = not AW109_ALT_HOT
+                AW109_VS_HOT = false
+            end
+        end
+
+        if IFR1_BTN_VS and not IFR1_LAST_BTN_VS then
+            AW109_PUSH_TIMER = sim_time
+        elseif IFR1_LAST_BTN_VS and not IFR1_BTN_VS and not IFR1_BOTH_BTN_ALT_VS then
+            if sim_time - AW109_PUSH_TIMER >= 0.5 then
+                command_once("sim/autopilot/vertical_speed")
+            else
+                AW109_IAS_HOT = false
+                AW109_HDG_HOT = false
+                AW109_ALT_HOT = false
+                AW109_VS_HOT = not AW109_VS_HOT
+            end
+        end
+
+        if not IFR1_BTN_ALT and not IFR1_BTN_VS then
+            IFR1_BOTH_BTN_ALT_VS = false
+        end
+
+
+        if AW109_IAS_HOT then
+            set("aw109/cockpit/knob/apms/ias_drag", get("aw109/cockpit/knob/apms/ias_drag") + k1 + 10 * k0)
+        elseif AW109_HDG_HOT then
+            if IFR1_BTN_KNOB and not IFR1_LAST_BTN_KNOB then
+                set("aw109/cockpit/button/rbp2/hdg_push", 1)
+            elseif IFR1_LAST_BTN_KNOB and not IFR1_BTN_KNOB then
+                set("aw109/cockpit/button/rbp2/hdg_push", 0)
+            end
+
+            if IFR1_BTN_SWAP and not IFR1_LAST_BTN_SWAP then
+                set("aw109/cockpit/button/rbp2/lnav", 1)
+            elseif IFR1_LAST_BTN_SWAP and not IFR1_BTN_SWAP then
+                set("aw109/cockpit/button/rbp2/lnav", 0)
+            end
+
+            set("aw109/cockpit/knob/rbp2/hdg/scroll", get("aw109/cockpit/knob/rbp2/hdg/scroll") + k1 + 10 * k0)
+        elseif AW109_ALT_HOT then
+            if IFR1_BTN_KNOB and not IFR1_LAST_BTN_KNOB then
+                set("aw109/cockpit/button/rbp2/alt_push", 1)
+            elseif IFR1_LAST_BTN_KNOB and not IFR1_BTN_KNOB then
+                set("aw109/cockpit/button/rbp2/alt_push", 0)
+            end
+
+            if IFR1_BTN_SWAP and not IFR1_LAST_BTN_SWAP then
+                set("aw109/cockpit/button/rbp2/vnav", 1)
+            elseif IFR1_LAST_BTN_SWAP and not IFR1_BTN_SWAP then
+                set("aw109/cockpit/button/rbp2/vnav", 0)
+            end
+
+            set("aw109/cockpit/knob/rbp2/alt/scroll", get("aw109/cockpit/knob/rbp2/alt/scroll") + k1 + 10 * k0)
+        elseif AW109_VS_HOT then
+            set("aw109/cockpit/knob/apms/vs_drag", get("aw109/cockpit/knob/apms/vs_drag") + sum_knob)
+        else
+            if IFR1_BTN_KNOB and not IFR1_LAST_BTN_KNOB then
+                set("aw109/cockpit/button/apms/rht_push", 1)
+            elseif IFR1_LAST_BTN_KNOB and not IFR1_BTN_KNOB then
+                set("aw109/cockpit/button/apms/rht_push", 0)
+            end
+
+            if IFR1_BTN_SWAP and not IFR1_LAST_BTN_SWAP then
+                set("aw109/cockpit/button/apms/hov", 1)
+            elseif IFR1_LAST_BTN_SWAP and not IFR1_BTN_SWAP then
+                set("aw109/cockpit/button/apms/hov", 0)
+            end
+
+            set("aw109/cockpit/knob/apms/rht_drag", get("aw109/cockpit/knob/apms/rht_drag") + k1 + 10 * k0)
+        end
+    end
+
+    if IFR1_MODE == IFR1_MODE_VALUE_XPDR then -- Replaced by the right knob on the remote bug panel
+        if IFR1_BTN_KNOB and not IFR1_LAST_BTN_KNOB then
+            set("aw109/cockpit/button/rbp2/course_push", 1)
+        elseif IFR1_LAST_BTN_KNOB and not IFR1_BTN_KNOB then
+            set("aw109/cockpit/button/rbp2/course_push", 0)
+        end
+
+        if IFR1_BTN_SWAP and not IFR1_LAST_BTN_SWAP then
+            set("aw109/cockpit/button/rbp2/set", 1)
+        elseif IFR1_LAST_BTN_SWAP and not IFR1_BTN_SWAP then
+            set("aw109/cockpit/button/rbp2/set", 0)
+        end
+
+        set("aw109/cockpit/knob/rbp2/course/scroll", get("aw109/cockpit/knob/rbp2/course/scroll") + k1)
+
+        if k0 < 0 then
+            set("aw109/cockpit/button/rbp2/brt_dec", 1)
+            AW109_RESET_NEEDED = true
+        elseif k0 > 0 then
+            set("aw109/cockpit/button/rbp2/brt_inc", 1)
+            AW109_RESET_NEEDED = true
+        end
+    end
+end
+
 function ifr1_send_leds(device)
     local led_val = 0
-    if IFR1_MODE == IFR1_MODE_VALUE_AP then
-        led_val = led_val + (IFR1_LED_AP and 2^0 or 0)
-        led_val = led_val + (IFR1_LED_HDG and 2^1 or 0)
-        led_val = led_val + (IFR1_LED_NAV and 2^2 or 0)
-        led_val = led_val + (IFR1_LED_APR and 2^3 or 0)
-        led_val = led_val + (IFR1_LED_ALT and 2^4 or 0)
-        led_val = led_val + (IFR1_LED_VS and 2^5 or 0)
-    end
-
-    if IFR1_MODE == IFR1_MODE_VALUE_XPDR then
-        led_val = led_val + (xpdr_ident > 0 and 2^0 or 0)
-    end
+    led_val = led_val + (IFR1_LED_AP and 1 or 0)
+    led_val = led_val + (IFR1_LED_HDG and 2 or 0)
+    led_val = led_val + (IFR1_LED_NAV and 4 or 0)
+    led_val = led_val + (IFR1_LED_APR and 8 or 0)
+    led_val = led_val + (IFR1_LED_ALT and 16 or 0)
+    led_val = led_val + (IFR1_LED_VS and 32 or 0)
 
     if IFR1_MODE_SHIFT then
-        -- local fraction = (sim_time - math.floor(sim_time))
-        -- led_val =  fraction > 0.25 and fraction <= 0.5 and 0 or 0xff
         led_val = 0xff
     end
 
@@ -439,23 +690,90 @@ function ifr1_ubyte_to_sbyte(usb)
 end
 
 function ifr1_process()
-    IFR1_LED_AP = ap_on > 0
-    IFR1_LED_HDG = ap_lateral == 1 or ap_lateral == 14
-    IFR1_LED_NAV = ap_lateral == 2 or ap_lateral == 13
-    IFR1_LED_ALT = ap_vertical == 6 or ap_alt_hold == 1
-    IFR1_LED_VS = ap_vertical == 4
-    IFR1_LED_APR = ap_appr > 0
-
     ifr1_open()
     if IFR1_DEVICE ~= nil then
         -- read from the IFR-1. Since it is set to non-blocking, this will return with nov == 0 if there is no report available
         local nov, byte0, buttons0, buttons1, buttons2, byte5, knob0, knob1, mode_val = hid_read(IFR1_DEVICE, 8)
-        if (nov == 8) then
-            knob0 = ifr1_ubyte_to_sbyte(knob0)
-            knob1 = ifr1_ubyte_to_sbyte(knob1)
-            ifr1_process_buttons_knobs(buttons0, buttons1, buttons2, knob0, knob1, mode_val)
+
+        if PLANE_AUTHOR == "X-Trident" and PLANE_DESCRIP == "AW109SP" then
+            if IFR1_MODE == IFR1_MODE_VALUE_FMS1 or IFR1_MODE == IFR1_MODE_VALUE_FMS2 then
+                IFR1_LED_AP = false
+                IFR1_LED_HDG = false
+                IFR1_LED_NAV = false
+                IFR1_LED_ALT = false
+                IFR1_LED_VS = false
+                IFR1_LED_APR = false
+            else
+                IFR1_LED_AP = aw109_ap_ias > 0
+                IFR1_LED_HDG = aw109_ap_hdg > 0
+                IFR1_LED_NAV = aw109_ap_nav_c > 0 or aw109_ap_nav_a > 0
+                IFR1_LED_ALT = aw109_ap_alt > 0
+                IFR1_LED_VS = aw109_ap_vs > 0
+                IFR1_LED_APR = aw109_ap_apr_c > 0 or aw109_ap_apr_a > 0
+
+                local fraction = (sim_time - math.floor(sim_time))
+                if AW109_IAS_HOT then
+                    IFR1_LED_AP = fraction <= 0.5
+                end
+
+                if AW109_HDG_HOT then
+                    IFR1_LED_HDG = fraction <= 0.5
+                end
+
+                if AW109_ALT_HOT then
+                    IFR1_LED_ALT = fraction <= 0.5
+                end
+
+                if AW109_VS_HOT then
+                    IFR1_LED_VS = fraction <= 0.5
+                end
+            end
+
+            if (AW109_IAS_HOT or AW109_HDG_HOT or AW109_ALT_HOT or AW109_VS_HOT) and sim_time - AW109_TIME_LAST_ACTION > 5 then
+                AW109_IAS_HOT = false
+                AW109_HDG_HOT = false
+                AW109_ALT_HOT = false
+                AW109_VS_HOT = false
+            end
+
+            if (nov == 8) then
+                AW109_TIME_LAST_ACTION = sim_time
+                knob0 = ifr1_ubyte_to_sbyte(knob0)
+                knob1 = ifr1_ubyte_to_sbyte(knob1)
+                ifr1_acquire_buttons(buttons0, buttons1, buttons2, mode_val)
+
+                ifr1_process_buttons_knobs_aw109sp(knob0, knob1)
+            end
+
+            if AW109_RESET_NEEDED then
+                set("aw109/cockpit/button/rbp2/brt_dec", 0)
+                set("aw109/cockpit/button/rbp2/brt_inc", 0)
+                AW109_RESET_NEEDED = false
+            end
+        else -- Standard configuration
+            IFR1_LED_AP = ap_on > 0
+            IFR1_LED_HDG = ap_lateral == 1 or ap_lateral == 14
+            IFR1_LED_NAV = ap_lateral == 2 or ap_lateral == 13
+            IFR1_LED_ALT = ap_vertical == 6 or ap_alt_hold == 1
+            IFR1_LED_VS = ap_vertical == 4
+            IFR1_LED_APR = ap_appr > 0
+
+            if IFR1_MODE == IFR1_MODE_VALUE_XPDR and xpdr_ident > 0 then
+                local fraction = (sim_time - math.floor(sim_time))
+                IFR1_LED_AP = fraction <= 0.5
+            end
+
+            if (nov == 8) then
+                knob0 = ifr1_ubyte_to_sbyte(knob0)
+                knob1 = ifr1_ubyte_to_sbyte(knob1)
+                ifr1_acquire_buttons(buttons0, buttons1, buttons2, mode_val)
+
+                ifr1_process_buttons_knobs_standard(knob0, knob1)
+            end
         end
         ifr1_send_leds(IFR1_DEVICE)
+    else
+
     end
 end
 
