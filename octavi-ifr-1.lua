@@ -53,6 +53,8 @@ IFR1_OPEN_TIME = 0.0
 IFR1_DEVICE = nil
 IFR1_DEVICE_VID = 0x4d8
 IFR1_DEVICE_PID = 0xe6d6
+IFR1_LAST_NUMBER_OF_HID_DEVICES = 0
+IFR1_FOUND = false
 
 DataRef("ap_on", "sim/cockpit2/autopilot/servos_on")
 DataRef("ap_lateral", "sim/cockpit2/autopilot/heading_mode")
@@ -114,22 +116,26 @@ function ifr1_close()
 end
 
 function ifr1_open()
-    ALL_HID_DEVICES, NUMBER_OF_HID_DEVICES = create_HID_table()
-    local have_ifr1 = false
     local connected = IFR1_DEVICE ~= nil
-    for i = 1, NUMBER_OF_HID_DEVICES do
-        if ALL_HID_DEVICES[i].vendor_id == IFR1_DEVICE_VID and ALL_HID_DEVICES[i].product_id == IFR1_DEVICE_PID then
-            have_ifr1 = true
-            break
+
+    if NUMBER_OF_HID_DEVICES ~= IFR1_LAST_NUMBER_OF_HID_DEVICES then
+        IFR1_LAST_NUMBER_OF_HID_DEVICES = NUMBER_OF_HID_DEVICES
+        IFR1_FOUND = false
+        ALL_HID_DEVICES, NUMBER_OF_HID_DEVICES = create_HID_table()
+        for i = 1, NUMBER_OF_HID_DEVICES do
+            if ALL_HID_DEVICES[i].vendor_id == IFR1_DEVICE_VID and ALL_HID_DEVICES[i].product_id == IFR1_DEVICE_PID then
+                IFR1_FOUND = true
+                break
+            end
         end
     end
 
-    if connected and not have_ifr1 then
+    if connected and not IFR1_FOUND then
         ifr1_close()
         return -- re-open on next loop to ensure init correctly
     end
-    
-    if have_ifr1 and not connected then
+
+    if IFR1_FOUND and not connected then
         IFR1_DEVICE = hid_open(IFR1_DEVICE_VID,IFR1_DEVICE_PID)
         if IFR1_DEVICE ~= nil then
             hid_set_nonblocking(IFR1_DEVICE, 1)
