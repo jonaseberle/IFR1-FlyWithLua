@@ -48,7 +48,6 @@ IFR1_MODE_VALUE_XPDR = 7
 
 IFR1_LED_LAST_WRITE = 0xff
 
-IFR1_MSG_TIME = 0.0
 IFR1_OPEN_TIME = 0.0
 
 IFR1_DEVICE = nil
@@ -83,12 +82,6 @@ DataRef("ap_state", "sim/cockpit/autopilot/autopilot_state")
 DataRef("heading", "sim/cockpit/autopilot/heading_mag", "writable")
 DataRef( "sim_time", "sim/network/misc/network_time_sec")
 DataRef("ap_alt_hold", "sim/cockpit2/autopilot/altitude_hold_status")
-
-function ifr1_msg(str)
-    IFR1_STATUS_TEXT = "IFR-1: " .. str
-    IFR1_MSG_TIME = sim_time
-    print(IFR1_STATUS_TEXT)
-end
 
 function ifr1_close()
     if IFR1_DEVICE ~= nil then
@@ -135,18 +128,15 @@ function ifr1_open()
     end
 
     if connected and not have_ifr1 then
-        ifr1_msg("Disconnected")
         ifr1_close()
         return -- re-open on next loop to ensure init correctly
     end
     
     if have_ifr1 and not connected then
-        ifr1_msg("Connecting")
         IFR1_DEVICE = hid_open(IFR1_DEVICE_VID,IFR1_DEVICE_PID)
         if IFR1_DEVICE ~= nil then
             hid_set_nonblocking(IFR1_DEVICE, 1)
             hid_write(IFR1_DEVICE, 11, IFR1_LED_LAST_WRITE)
-            ifr1_msg("Connected")
         end
     end
 end
@@ -203,13 +193,10 @@ function ifr1_process_buttons_knobs(b0, b1, b2, k0, k1, mv)
 
     if IFR1_MODE_SHIFT then
         if IFR1_MODE == IFR1_MODE_VALUE_COM1 then
-            heading = ifr1_round((heading + k0 * 10 + k1),0) % 360
-
             if IFR1_BTN_HDG and not IFR1_LAST_BTN_HDG then
-                ifr1_msg("sync DG")
                 command_once("sim/instruments/DG_sync_mag")
             else
-                ifr1_msg(string.format("Heading bug: %d, indicated: %d, dg: %d", heading, heading_indicated, dg_heading))
+                heading = ifr1_round((heading + k0 * 10 + k1),0) % 360
             end
 
         end
@@ -218,22 +205,17 @@ function ifr1_process_buttons_knobs(b0, b1, b2, k0, k1, mv)
             baro = ifr1_round(baro + k0 / 10.0 + k1 / 100.0, 2)
             local baro_current = ifr1_round(ifr1_pas_to_inhg(baro_current_pas),2)
             if IFR1_BTN_ALT and not IFR1_LAST_BTN_ALT then
-                ifr1_msg("sync baro")
                 baro = baro_current
                 ap_baro = baro
-            else
-                ifr1_msg(string.format("Baro: %0.2f, Current: %f", baro, baro_current))
             end
         end
 
         if IFR1_MODE == IFR1_MODE_VALUE_NAV1 then
             nav1_obs = ifr1_round((nav1_obs - k0 * 10 - k1),0) % 360
-            ifr1_msg(string.format("NAV1 OBS: %d", nav1_obs))
         end
 
         if IFR1_MODE == IFR1_MODE_VALUE_NAV2 then
             nav2_obs = ifr1_round((nav2_obs - k0 * 10 - k1),0) % 360
-            ifr1_msg(string.format("NAV2 OBS: %d", nav2_obs))
         end
 
         if IFR1_MODE == IFR1_MODE_VALUE_AP then
@@ -264,7 +246,6 @@ function ifr1_process_buttons_knobs(b0, b1, b2, k0, k1, mv)
             freq = mhz * 100 + khz
             if IFR1_MODE == IFR1_MODE_VALUE_COM1 then
                 com1_sby = freq
-                ifr1_msg(string.format("COM1: %0.3f", freq/100))
                 if IFR1_BTN_SWAP and not IFR1_LAST_BTN_SWAP then
                     com1_sby = com1_frq
                     com1_frq = freq
@@ -272,7 +253,6 @@ function ifr1_process_buttons_knobs(b0, b1, b2, k0, k1, mv)
             end
             if IFR1_MODE == IFR1_MODE_VALUE_COM2 then
                 com2_sby = freq
-                ifr1_msg(string.format("COM2: %0.3f", freq/100))
                 if IFR1_BTN_SWAP and not IFR1_LAST_BTN_SWAP then
                     com2_sby = com2_frq
                     com2_frq = freq
@@ -280,7 +260,6 @@ function ifr1_process_buttons_knobs(b0, b1, b2, k0, k1, mv)
             end
             if IFR1_MODE == IFR1_MODE_VALUE_NAV1 then
                 nav1_sby = freq
-                ifr1_msg(string.format("NAV1: %0.3f", freq/100))
                 if IFR1_BTN_SWAP and not IFR1_LAST_BTN_SWAP then
                     nav1_sby = nav1_frq
                     nav1_frq = freq
@@ -288,7 +267,6 @@ function ifr1_process_buttons_knobs(b0, b1, b2, k0, k1, mv)
             end
             if IFR1_MODE == IFR1_MODE_VALUE_NAV2 then
                 nav2_sby = freq
-                ifr1_msg(string.format("NAV2: %0.3f", freq/100))
                 if IFR1_BTN_SWAP and not IFR1_LAST_BTN_SWAP then
                     nav2_sby = nav2_frq
                     nav2_frq = freq
@@ -369,11 +347,6 @@ function ifr1_process_buttons_knobs(b0, b1, b2, k0, k1, mv)
             ap_vs = math.floor(ap_vs/100 + k0 + 0.5) * 100
             ap_alt = math.floor(ap_alt/100 + k1 + 0.5) * 100
 
-            if ap_vs ~= last_ap_vs or ap_alt ~= last_ap_alt then
-                ifr1_msg(string.format("AP VS: %d, ALT: %d", ap_vs, ap_alt))
-            end
-
-
             if IFR1_BTN_AP and not IFR1_LAST_BTN_AP then
                 command_once("sim/autopilot/servos_toggle")
             end
@@ -450,12 +423,6 @@ function ifr1_send_leds(device)
     end
 end
 
-function ifr1_draw()
-    if IFR1_MSG_TIME + 5.0 > sim_time then
-        draw_string_Helvetica_12(SCREEN_WIDTH - 700, SCREEN_HEIGHT - 50, IFR1_STATUS_TEXT)
-    end
-end
-
 function ifr1_ubyte_to_sbyte(usb)
     if usb > 127 then
         return -256 + usb
@@ -485,9 +452,7 @@ function ifr1_process()
     end
 end
 
-ifr1_msg("Not connected")
 ifr1_open()
-do_every_draw('ifr1_draw()')
 do_every_frame('ifr1_process()')
 do_on_exit("ifr1_close()")
 

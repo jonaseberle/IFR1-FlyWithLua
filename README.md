@@ -1,5 +1,5 @@
 # Unofficial Octavi IFR-1 X-Plane/FlyWithLua Script
-Supports IFR-1 on unsupported platforms. Tested on macOS.
+Supports IFR-1 on unsupported platforms. Tested on Linux.
 
 ## About
 I didn't pay enough attention when I bought it, and when it
@@ -24,8 +24,6 @@ data, and how the IFR-1 works under the hood.
 The script attempts to open the IFR-1 on load and periodically rechecks. It should automatically connect or reconnect if the IFR-1 is not plugged on start or if it is unplugged and replugged.
 
 On COM1, COM2, NAV1, NAV2, and AP, pressing the knob button will activate shift mode. The leds will all light up and wink to indicate shift mode. Shift mode generally makes the knob adjust the value printed in blue above the mode button, but there are some bonus hidden features.
-
-Most knobs and buttons will cause a message to be printed to the upper right part of the main display.
 
 ### COM1/HDG
 Adjust the COM1 standby frequency. Press the swap button to swap to active.
