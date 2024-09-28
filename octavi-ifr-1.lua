@@ -63,9 +63,6 @@ DataRef("ap_alt", "sim/cockpit2/autopilot/altitude_dial_ft", "writable")
 DataRef("xpdr_code", "sim/cockpit2/radios/actuators/transponder_code", "writable")
 DataRef("nav1_obs", "sim/cockpit/radios/nav1_obs_degm", "writable")
 DataRef("nav2_obs", "sim/cockpit/radios/nav2_obs_degm2", "writable")
-DataRef("baro", "sim/cockpit/misc/barometer_setting", "writable")
-DataRef("ap_baro", "sim/cockpit2/autopilot/barometer_setting_in_hg_alt_preselector", "writable")
-DataRef("baro_current_pas", "sim/weather/region/sealevel_pressure_pas")
 DataRef("heading_indicated", "sim/cockpit/misc/compass_indicated")
 DataRef("dg_heading", "sim/cockpit2/gauges/indicators/heading_vacuum_deg_mag_pilot", "writable")
 DataRef("xpdr_mode", "sim/cockpit2/radios/actuators/transponder_mode", "writable")
@@ -202,11 +199,15 @@ function ifr1_process_buttons_knobs(b0, b1, b2, k0, k1, mv)
         end
 
         if IFR1_MODE == IFR1_MODE_VALUE_COM2 then
-            baro = ifr1_round(baro + k0 / 10.0 + k1 / 100.0, 2)
-            local baro_current = ifr1_round(ifr1_pas_to_inhg(baro_current_pas),2)
-            if IFR1_BTN_ALT and not IFR1_LAST_BTN_ALT then
-                baro = baro_current
-                ap_baro = baro
+            for i = 1, math.abs(k1) do
+                if k1 < 0 then
+                    command_once("sim/instruments/barometer_down")
+                else
+                    command_once("sim/instruments/barometer_up")
+                end
+            end
+            if IFR1_BTN_SWAP and not IFR1_LAST_BTN_SWAP then
+                command_once("sim/instruments/barometer_std")
             end
         end
 

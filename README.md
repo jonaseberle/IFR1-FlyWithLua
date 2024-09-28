@@ -33,7 +33,7 @@ In shift mode, the knob adjusts the heading bug. Pressing the OBS/HDG button wil
 ### COM2/BARO
 Adjust the COM2 standby frequency. Press the swap button to swap to active.
 
-In shift mode, the knob adjusts the pilot's altimeter setting. Pressing the VNAV/ALT button syncs the altimeter to the current sea level setting at the aircraft position (which is not necessarily the current value for the nearest airport)
+In shift mode, the knob adjusts the pilot's altimeter setting. Pressing the swap button sets to std.
 
 ### NAV1/CRS1
 Adjust the NAV1 standby frequency. Press the swap button to swap to active.
