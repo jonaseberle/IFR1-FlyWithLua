@@ -475,19 +475,19 @@ function ifr1_process_buttons_knobs_aw109sp(k0, k1)
             command_once(string.format("aw109/button/EFIS_%d_R4", efis))
         end
 
-        if IFR1_BTN_NAV and not IFR1_LAST_BTN_NAV then
+        if IFR1_BTN_AP and not IFR1_LAST_BTN_AP then
             command_once(string.format("aw109/button/EFIS_%d_L1", efis))
         end
 
-        if IFR1_BTN_APR and not IFR1_LAST_BTN_APR then
+        if IFR1_BTN_HDG and not IFR1_LAST_BTN_HDG then
             command_once(string.format("aw109/button/EFIS_%d_L2", efis))
         end
 
-        if IFR1_BTN_ALT and not IFR1_LAST_BTN_ALT then
+        if IFR1_BTN_NAV and not IFR1_LAST_BTN_NAV then
             command_once(string.format("aw109/button/EFIS_%d_L3", efis))
         end
 
-        if IFR1_BTN_VS and not IFR1_LAST_BTN_VS then
+        if IFR1_BTN_APR and not IFR1_LAST_BTN_APR then
             command_once(string.format("aw109/button/EFIS_%d_L4", efis))
         end
 
