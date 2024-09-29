@@ -435,6 +435,7 @@ function ifr1_process_buttons_knobs_aw109sp(k0, k1)
         if IFR1_BTN_KNOB and not IFR1_LAST_BTN_KNOB then
             IFR1_MODE_SHIFT = not IFR1_MODE_SHIFT
         end
+
         if IFR1_MODE_SHIFT then
             if IFR1_LAST_BTN_SWAP and not IFR1_BTN_SWAP then
                 set("aw109/cockpit/button/standby/knob_press", 1)
@@ -448,7 +449,29 @@ function ifr1_process_buttons_knobs_aw109sp(k0, k1)
     end
 
     if IFR1_MODE == IFR1_MODE_VALUE_NAV1 then
-        ifr1_handle_nav_freq(k0, k1, 1)
+        if IFR1_BTN_KNOB and not IFR1_LAST_BTN_KNOB then
+            IFR1_MODE_SHIFT = not IFR1_MODE_SHIFT
+        end
+
+        if IFR1_MODE_SHIFT then
+            for i = 1, math.abs(k1) do
+                if k1 < 0 then
+                    command_once("sim/radios/actv_adf1_ones_tens_down")
+                else
+                    command_once("sim/radios/actv_adf1_ones_tens_up")
+                end
+            end
+
+            for i = 1, math.abs(k0) do
+                if k0 < 0 then
+                    command_once("sim/radios/actv_adf1_hundreds_thous_down")
+                else
+                    command_once("sim/radios/actv_adf1_hundreds_thous_up")
+                end
+            end
+        else
+            ifr1_handle_nav_freq(k0, k1, 1)
+        end
     end
 
     if IFR1_MODE == IFR1_MODE_VALUE_NAV2 then

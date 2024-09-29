@@ -72,7 +72,7 @@ In shift mode, the knob adjusts the standby altimeter setting.
 
 ### NAV1/CRS1
 Normal mode: same as standard
-No shift mode
+In shift mode, the knob adjusts the ADF frequency.
 
 ### NAV2/CRS2
 Normal mode: same as standard
