@@ -515,12 +515,11 @@ function ifr1_process_buttons_knobs_aw109sp(k0, k1)
             if sim_time - AW109_PUSH_TIMER >= 0.5 then
                 set("aw109/cockpit/button/apms/ias_push", 1)
                 set("aw109/cockpit/button/apms/ias_push", 0)
-            else
-                AW109_IAS_HOT = not AW109_IAS_HOT
-                AW109_HDG_HOT = false
-                AW109_ALT_HOT = false
-                AW109_VS_HOT = false
             end
+            AW109_IAS_HOT = not AW109_IAS_HOT
+            AW109_HDG_HOT = false
+            AW109_ALT_HOT = false
+            AW109_VS_HOT = false
         end
 
         if IFR1_BTN_HDG and not IFR1_LAST_BTN_HDG then
@@ -528,12 +527,11 @@ function ifr1_process_buttons_knobs_aw109sp(k0, k1)
         elseif IFR1_LAST_BTN_HDG and not IFR1_BTN_HDG then
             if sim_time - AW109_PUSH_TIMER >= 0.5 then
                 command_once("sim/autopilot/heading_sync")
-            else
-                AW109_IAS_HOT = false
-                AW109_HDG_HOT = not AW109_HDG_HOT
-                AW109_ALT_HOT = false
-                AW109_VS_HOT = false
             end
+            AW109_IAS_HOT = false
+            AW109_HDG_HOT = not AW109_HDG_HOT
+            AW109_ALT_HOT = false
+            AW109_VS_HOT = false
         end
 
         if IFR1_BTN_NAV and not IFR1_LAST_BTN_NAV then
@@ -562,12 +560,11 @@ function ifr1_process_buttons_knobs_aw109sp(k0, k1)
         if IFR1_LAST_BTN_ALT and not IFR1_BTN_ALT and not IFR1_BOTH_BTN_ALT_VS then
             if sim_time - AW109_PUSH_TIMER >= 0.5 then
                 command_once("sim/autopilot/altitude_hold")
-            else
-                AW109_IAS_HOT = false
-                AW109_HDG_HOT = false
-                AW109_ALT_HOT = not AW109_ALT_HOT
-                AW109_VS_HOT = false
             end
+            AW109_IAS_HOT = false
+            AW109_HDG_HOT = false
+            AW109_ALT_HOT = not AW109_ALT_HOT
+            AW109_VS_HOT = false
         end
 
         if IFR1_BTN_VS and not IFR1_LAST_BTN_VS then
@@ -575,12 +572,11 @@ function ifr1_process_buttons_knobs_aw109sp(k0, k1)
         elseif IFR1_LAST_BTN_VS and not IFR1_BTN_VS and not IFR1_BOTH_BTN_ALT_VS then
             if sim_time - AW109_PUSH_TIMER >= 0.5 then
                 command_once("sim/autopilot/vertical_speed")
-            else
-                AW109_IAS_HOT = false
-                AW109_HDG_HOT = false
-                AW109_ALT_HOT = false
-                AW109_VS_HOT = not AW109_VS_HOT
             end
+            AW109_IAS_HOT = false
+            AW109_HDG_HOT = false
+            AW109_ALT_HOT = false
+            AW109_VS_HOT = not AW109_VS_HOT
         end
 
         if not IFR1_BTN_ALT and not IFR1_BTN_VS then
