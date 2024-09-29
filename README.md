@@ -68,7 +68,7 @@ No shift mode
 
 ### COM2/BARO
 Normal mode: same as standard
-In shift mode, the knob adjusts the pilot's altimeter setting.
+In shift mode, the knob adjusts the standby altimeter setting.
 
 ### NAV1/CRS1
 Normal mode: same as standard

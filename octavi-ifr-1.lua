@@ -436,13 +436,12 @@ function ifr1_process_buttons_knobs_aw109sp(k0, k1)
             IFR1_MODE_SHIFT = not IFR1_MODE_SHIFT
         end
         if IFR1_MODE_SHIFT then
-            for i = 1, math.abs(sum_knob) do
-                if sum_knob < 0 then
-                    command_once("sim/instruments/barometer_down")
-                else
-                    command_once("sim/instruments/barometer_up")
-                end
+            if IFR1_LAST_BTN_SWAP and not IFR1_BTN_SWAP then
+                set("aw109/cockpit/button/standby/knob_press", 1)
+                set("aw109/cockpit/button/standby/knob_press", 0)
             end
+
+            set("aw109/cockpit/knob/standby/knob", get("aw109/cockpit/knob/standby/knob") + k1 + 10 * k0)
         else
             ifr1_handle_com_freq(k0, k1, 2)
         end
