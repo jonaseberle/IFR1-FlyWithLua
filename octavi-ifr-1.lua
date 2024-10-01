@@ -80,16 +80,6 @@ AW109_ALT_HOT = false
 AW109_VS_HOT = false
 AW109_TIME_LAST_ACTION = 0
 
--- AW109 AP
-DataRef("aw109_ap_ias", "aw109/cockpit/capsule/apms/ias_on")
-DataRef("aw109_ap_hdg", "aw109/cockpit/capsule/apms/hdg_on")
-DataRef("aw109_ap_nav_c", "aw109/cockpit/capsule/apms/nav_c")
-DataRef("aw109_ap_nav_a", "aw109/cockpit/capsule/apms/nav_a")
-DataRef("aw109_ap_apr_c", "aw109/cockpit/capsule/apms/app_c")
-DataRef("aw109_ap_apr_a", "aw109/cockpit/capsule/apms/app_a")
-DataRef("aw109_ap_alt", "aw109/cockpit/capsule/apms/alt_on")
-DataRef("aw109_ap_vs", "aw109/cockpit/capsule/apms/vs_on")
-
 function ifr1_close()
     if IFR1_DEVICE ~= nil then
         hid_close(IFR1_DEVICE)
@@ -722,12 +712,12 @@ function ifr1_process()
                 IFR1_LED_VS = false
                 IFR1_LED_APR = false
             else
-                IFR1_LED_AP = aw109_ap_ias > 0
-                IFR1_LED_HDG = aw109_ap_hdg > 0
-                IFR1_LED_NAV = aw109_ap_nav_c > 0 or aw109_ap_nav_a > 0
-                IFR1_LED_ALT = aw109_ap_alt > 0
-                IFR1_LED_VS = aw109_ap_vs > 0
-                IFR1_LED_APR = aw109_ap_apr_c > 0 or aw109_ap_apr_a > 0
+                IFR1_LED_AP = get("aw109/cockpit/capsule/apms/ias_on") > 0
+                IFR1_LED_HDG = get("aw109/cockpit/capsule/apms/hdg_on") > 0
+                IFR1_LED_NAV = get("aw109/cockpit/capsule/apms/nav_c") > 0 or get("aw109/cockpit/capsule/apms/nav_a") > 0
+                IFR1_LED_ALT = get("aw109/cockpit/capsule/apms/alt_on") > 0
+                IFR1_LED_VS = get("aw109/cockpit/capsule/apms/vs_on") > 0
+                IFR1_LED_APR = get("aw109/cockpit/capsule/apms/app_c") > 0 or get("aw109/cockpit/capsule/apms/app_a") > 0
 
                 local fraction = (sim_time - math.floor(sim_time))
                 if AW109_IAS_HOT then
